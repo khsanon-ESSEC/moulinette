@@ -53,7 +53,9 @@ class FileAttente extends ChangeNotifier {
     if (t.etat == EtatTache.attente) {
       t.etat = EtatTache.annulee;
       notifyListeners();
-    } else if (t.etat == EtatTache.enCours) {
+    } else if (t.etat == EtatTache.enCours && t._session != null) {
+      // Jamais sans identifiant : FFmpegKit.cancel(null) arrêterait toutes les sessions (lectures de fichiers
+      // comprises). Si la session n'a pas encore d'identifiant, surSession l'annule dès qu'elle en reçoit un.
       await annulerFfmpeg(t._session);
     }
   }
@@ -84,6 +86,7 @@ class FileAttente extends ChangeNotifier {
     for (final e in t.etapes) {
       if (t._annulationDemandee) break;
       t.fraction = 0;
+      t._session = null;
       Resultat r;
       try {
         r = await lancerFfmpeg(
@@ -97,7 +100,10 @@ class FileAttente extends ChangeNotifier {
               notifyListeners();
             }
           },
-          surSession: (id) => t._session = id,
+          surSession: (id) {
+            t._session = id;
+            if (t._annulationDemandee && id != null) annulerFfmpeg(id);
+          },
         );
       } catch (err) {
         r = Resultat(ok: false, message: '$err');

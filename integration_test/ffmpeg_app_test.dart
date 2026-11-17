@@ -103,6 +103,28 @@ void main() {
     }
   });
 
+  testWidgets('T-008 : annuler aussitôt n’arrête que cette tâche', (_) async {
+    final long = p.join(dossier.path, 'aussitot.mkv');
+    final t = Tache(titre: 'x', detail: '', etapes: [
+      Etape(sortie: long, duree: 600, commande: () async {
+        await Future<void>.delayed(const Duration(milliseconds: 300)); // comme l'ouverture SAF sur Android
+        return ['-y', '-f', 'lavfi', '-i', 'testsrc=size=1280x720:rate=30:duration=600', '-c:v', 'libx264', long];
+      }),
+    ]);
+    final lecture = Source(nom: video.nom, chemin: video.chemin);
+    fileAttente.ajouter(t);
+    final sonde = lecture.sonder();
+    await fileAttente.annuler(t); // avant que la session FFmpeg ait un identifiant
+    await sonde;
+    while (t.active) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    expect(t.etat, EtatTache.annulee);
+    expect(lecture.erreur, isNull);
+    expect(lecture.duree, closeTo(10, 0.2));
+    expect(File(long).existsSync(), isFalse);
+  });
+
   testWidgets('annulation et message d’erreur', (_) async {
     final long = p.join(dossier.path, 'long.mkv');
     final t = Tache(titre: 'long', detail: '', etapes: [
