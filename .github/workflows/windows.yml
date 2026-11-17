@@ -9,13 +9,15 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: 3.47.9
       - run: flutter pub get
       - run: flutter test test/ecrans_test.dart
+      # Fait tourner le FFmpeg intégré sous Windows : les 12 formats, la découpe, l'annulation.
+      - run: flutter test integration_test -d windows
       - run: flutter build windows --release
       - name: Paquet zip
         shell: pwsh
@@ -23,7 +25,7 @@ jobs:
           $v = (Select-String -Path pubspec.yaml -Pattern '^version: (\S+)\+').Matches[0].Groups[1].Value
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "Moulinette-$v-windows.zip"
           echo "ZIP=Moulinette-$v-windows.zip" >> $env:GITHUB_ENV
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Moulinette-windows
           path: ${{ env.ZIP }}
