@@ -24,7 +24,7 @@ class _EcranConvertirState extends State<EcranConvertir> {
   bool get _copiePossible => _format.video && _format != Format.gif;
 
   Future<void> _lancer() async {
-    final valides = _sources.where((s) => s.erreur == null).toList();
+    final valides = _sources.where((s) => s.pret).toList();
     var ignorees = 0;
     for (final s in valides) {
       if (_format.video && s.aDeLaVideo == false) {
@@ -62,8 +62,8 @@ class _EcranConvertirState extends State<EcranConvertir> {
 
   @override
   Widget build(BuildContext context) {
-    final prets = _sources.where((s) => s.erreur == null && s.duree != null).length;
-    final enLecture = _sources.any((s) => s.erreur == null && s.duree == null);
+    final prets = _sources.where((s) => s.pret).length;
+    final enLecture = _sources.any((s) => !s.sonde);
     return Ecran(enfants: [
       const Titre('Fichiers à convertir'),
       ListeFichiers(sources: _sources, onChange: () => setState(() {})),

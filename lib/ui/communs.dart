@@ -86,9 +86,10 @@ class _ListeFichiersState extends State<ListeFichiers> {
               ),
               title: Text(s.nom, maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(s.erreur ??
-                  (s.duree == null
+                  (!s.sonde
                       ? 'Lecture…'
-                      : '${ecrireDuree(s.duree!)} · ${s.aDeLaVideo == true ? 'vidéo' : 'audio'}'
+                      : '${s.duree == null ? 'durée inconnue' : ecrireDuree(s.duree!)} · '
+                          '${s.aDeLaVideo == true ? 'vidéo' : 'audio'}'
                           '${s.aDeLaVideo == true && s.aDuSon == false ? ' sans son' : ''}')),
               trailing: IconButton(
                 tooltip: 'Retirer',

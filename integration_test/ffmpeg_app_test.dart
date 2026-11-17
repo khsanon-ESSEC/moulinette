@@ -43,6 +43,26 @@ void main() {
     expect(video.codecAudio, 'aac');
   });
 
+  testWidgets('T-003 : fichier sans durée connue, prêt quand même et convertible', (_) async {
+    final brut = p.join(dossier.path, 'flux brut.mkv');
+    expect((await lancer(['-y', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=160x120', '-c:v', 'libx264',
+      '-f', 'h264', brut], 2)).ok, isTrue);
+    final s = Source(nom: 'flux brut.mkv', chemin: brut);
+    expect(s.sonde, isFalse);
+    await s.sonder();
+    expect(s.sonde, isTrue);
+    expect(s.duree, isNull);
+    expect(s.pret, isTrue);
+    final r = await lancer(commandeConversion(entree: brut, sortie: p.join(dossier.path, 'flux.mp4'), format: Format.mp4), 0);
+    expect(r.ok, isTrue, reason: r.message);
+    final vide = p.join(dossier.path, 'vide.mp4');
+    await File(vide).writeAsString('');
+    final v = Source(nom: 'vide.mp4', chemin: vide);
+    await v.sonder();
+    expect(v.sonde, isTrue);
+    expect(v.pret, isFalse);
+  });
+
   testWidgets('tous les formats', (_) async {
     for (final f in Format.values) {
       final sortie = p.join(dossier.path, 'c.${f.extension}');

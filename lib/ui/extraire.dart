@@ -22,7 +22,7 @@ class _EcranExtraireState extends State<EcranExtraire> {
 
   Future<void> _lancer() async {
     var sansSon = 0;
-    for (final s in _sources.where((s) => s.erreur == null)) {
+    for (final s in _sources.where((s) => s.pret)) {
       if (s.aDuSon == false) {
         sansSon++;
         continue;
@@ -51,8 +51,8 @@ class _EcranExtraireState extends State<EcranExtraire> {
 
   @override
   Widget build(BuildContext context) {
-    final prets = _sources.where((s) => s.erreur == null && s.duree != null).length;
-    final enLecture = _sources.any((s) => s.erreur == null && s.duree == null);
+    final prets = _sources.where((s) => s.pret).length;
+    final enLecture = _sources.any((s) => !s.sonde);
     return Ecran(enfants: [
       const Titre('Vidéos dont garder le son'),
       ListeFichiers(sources: _sources, onChange: () => setState(() {})),

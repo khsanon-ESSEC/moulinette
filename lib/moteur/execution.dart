@@ -23,6 +23,9 @@ class Source {
   final String? chemin;
   final String? uri;
 
+  /// Vrai quand la lecture du fichier est finie, réussie ou non. La durée peut rester inconnue (flux brut,
+  /// enregistrement interrompu) : le fichier se convertit quand même, sans pourcentage.
+  bool sonde = false;
   double? duree;
   bool? aDeLaVideo;
   bool? aDuSon;
@@ -61,8 +64,13 @@ class Source {
       if (aDeLaVideo == false && aDuSon == false) erreur = 'Ni son ni vidéo';
     } catch (e) {
       erreur = 'Fichier illisible';
+    } finally {
+      sonde = true;
     }
   }
+
+  /// Lu, sans erreur : prêt à être traité.
+  bool get pret => sonde && erreur == null;
 }
 
 const _extensionsMedia = [

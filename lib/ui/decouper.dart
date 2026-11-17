@@ -37,7 +37,8 @@ class _EcranDecouperState extends State<EcranDecouper> {
   /// Plan de découpe calculé à partir des champs, ou message d'erreur.
   (List<Morceau>?, String?) _plan() {
     final s = _source;
-    if (s == null || s.duree == null) return (null, null);
+    if (s == null || !s.pret) return (null, null);
+    if (s.duree == null) return (null, 'La durée de ce fichier est inconnue : il ne peut pas être découpé. Convertissez-le d’abord (en MP4 ou MKV), puis découpez la copie.');
     try {
       double lire(TextEditingController c, String quoi) =>
           lireDuree(c.text) ?? (throw FormatException('$quoi : écrivez par exemple 1:30, 90 ou 5m.'));
