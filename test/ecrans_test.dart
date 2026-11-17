@@ -1,7 +1,9 @@
 // Dessine chaque écran à plusieurs tailles et vérifie qu'aucune erreur de mise en page ne survient.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moulinette/main.dart';
+import 'package:moulinette/ui/a_propos.dart';
 import 'package:moulinette/moteur/file_attente.dart';
 
 void main() {
@@ -59,4 +61,34 @@ void main() {
       expect(find.text('Effacer les terminées'), findsOneWidget);
     });
   }
+
+  // GPL : chaque personne qui reçoit l'app doit pouvoir lire la licence et trouver le code source.
+  for (final taille in const [Size(390, 844), Size(1440, 900)]) {
+    testWidgets('à propos et licences (${taille.width.toInt()} px)', (tester) async {
+      tester.view.physicalSize = taille;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const Moulinette());
+      await tester.tap(find.byTooltip('À propos et licences'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('licence publique générale GNU'), findsOneWidget);
+      expect(find.text('https://github.com/khsanon-ESSEC/moulinette'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Licences des composants'), 200,
+          scrollable: find.descendant(of: find.byType(EcranAPropos), matching: find.byType(Scrollable)).first);
+      await tester.tap(find.text('Licences des composants'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(LicensePage), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  test('licences de FFmpeg ajoutées à la liste de l’app', () async {
+    enregistrerLicences(); // fait par main() dans l'app
+    final paquets = <String>[];
+    await for (final l in LicenseRegistry.licenses) {
+      paquets.addAll(l.packages);
+    }
+    expect(paquets, containsAll(['FFmpeg', 'x264', 'Moulinette']));
+  });
 }

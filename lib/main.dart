@@ -2,12 +2,16 @@
 import 'package:flutter/material.dart';
 
 import 'moteur/file_attente.dart';
+import 'ui/a_propos.dart';
 import 'ui/convertir.dart';
 import 'ui/decouper.dart';
 import 'ui/extraire.dart';
 import 'ui/taches.dart';
 
-void main() => runApp(const Moulinette());
+void main() {
+  enregistrerLicences();
+  runApp(const Moulinette());
+}
 
 const couleurMoulinette = Color(0xFF2E5E4E);
 
@@ -83,6 +87,15 @@ class _AccueilState extends State<Accueil> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Image.asset('assets/icon/icon.png', width: 40, height: 40),
                 ),
+                trailing: Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _boutonAPropos(context),
+                    ),
+                  ),
+                ),
                 destinations: [
                   for (final (i, d) in destinations.indexed)
                     NavigationRailDestination(icon: i == 3 ? badge : Icon(d.$1), label: Text(d.$2)),
@@ -107,7 +120,7 @@ class _AccueilState extends State<Accueil> {
         );
       }
       return Scaffold(
-        appBar: AppBar(title: Text(_titres[onglet])),
+        appBar: AppBar(title: Text(_titres[onglet]), actions: [_boutonAPropos(context)]),
         body: contenu,
         bottomNavigationBar: NavigationBar(
           selectedIndex: onglet,
@@ -120,4 +133,10 @@ class _AccueilState extends State<Accueil> {
       );
     });
   }
+
+  Widget _boutonAPropos(BuildContext context) => IconButton(
+        tooltip: 'À propos et licences',
+        icon: const Icon(Icons.info_outline),
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EcranAPropos())),
+      );
 }

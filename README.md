@@ -22,3 +22,11 @@ Les fichiers créés vont : à côté du fichier d'origine (Mac, Windows), dans 
     flutter test integration_test -d macos   # FFmpeg intégré à l'app (marche aussi sur un émulateur Android)
 
 Icône : `dart run tool/icon.dart` puis `dart run flutter_launcher_icons`.
+
+## Licence
+
+Moulinette est un logiciel libre, publié sous la licence publique générale GNU, version 3 ou ultérieure (voir [LICENSE](LICENSE)). © 2026 Karl-Henry Sanon.
+
+L'app intègre FFmpeg par `ffmpeg_kit_flutter_new` (variante « Full GPL » : x264, x265, xvidcore, vid.stab), ce qui place l'app entière sous GPL. Les notices de FFmpeg sont dans `assets/licences/` et s'affichent dans l'app (bouton ⓘ, « Licences des composants »). La version Windows livre aussi `licenses/ffmpeg_kit_flutter_new/` à côté de l'exécutable.
+
+Code source correspondant à chaque version distribuée : ce dépôt, à l'étiquette de la version (par exemple `v1.1.0`).
