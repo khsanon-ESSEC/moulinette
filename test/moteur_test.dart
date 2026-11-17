@@ -23,15 +23,24 @@ Future<void> lancer(List<String> args) async {
 }
 
 Future<Map<String, dynamic>> sonder(String fichier) async {
-  final r = await Process.run(ffprobe, ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', fichier]);
+  final r = await Process.run(ffprobe, [
+    '-v',
+    'error',
+    '-print_format',
+    'json',
+    '-show_format',
+    '-show_streams',
+    fichier,
+  ]);
   expect(r.exitCode, 0, reason: r.stderr.toString());
   return jsonDecode(r.stdout as String) as Map<String, dynamic>;
 }
 
 Future<double> duree(String fichier) async => double.parse((await sonder(fichier))['format']['duration'] as String);
 
-Future<List<String>> typesDeFlux(String fichier) async =>
-    [for (final s in (await sonder(fichier))['streams'] as List) s['codec_type'] as String];
+Future<List<String>> typesDeFlux(String fichier) async => [
+  for (final s in (await sonder(fichier))['streams'] as List) s['codec_type'] as String,
+];
 
 void main() {
   group('durées', () {
@@ -71,7 +80,11 @@ void main() {
     });
     test('points', () {
       final m = planDecoupe(dureeTotale: 60, mode: ModeDecoupe.points, points: [40, 10, 10, 70]);
-      expect(m.map((x) => [x.debut, x.fin]).toList(), [[0, 10], [10, 40], [40, 60]]);
+      expect(m.map((x) => [x.debut, x.fin]).toList(), [
+        [0, 10],
+        [10, 40],
+        [40, 60],
+      ]);
     });
     test('passage et erreurs', () {
       expect(planDecoupe(dureeTotale: 60, mode: ModeDecoupe.passage, debut: 10, fin: 90).single.fin, 60);
@@ -90,8 +103,24 @@ void main() {
       dossier = await Directory.systemTemp.createTemp('moulinette');
       video = p.join(dossier.path, 'source avec espaces.mp4');
       audio = p.join(dossier.path, 'son.wav');
-      await lancer(['-f', 'lavfi', '-i', 'testsrc=size=320x240:rate=25:duration=12', '-f', 'lavfi', '-i',
-        'sine=frequency=440:duration=12', '-c:v', 'libx264', '-g', '25', '-c:a', 'aac', '-shortest', video]);
+      await lancer([
+        '-f',
+        'lavfi',
+        '-i',
+        'testsrc=size=320x240:rate=25:duration=12',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=frequency=440:duration=12',
+        '-c:v',
+        'libx264',
+        '-g',
+        '25',
+        '-c:a',
+        'aac',
+        '-shortest',
+        video,
+      ]);
       await lancer(['-f', 'lavfi', '-i', 'sine=frequency=330:duration=9', audio]);
     });
     tearDownAll(() => dossier.delete(recursive: true));
@@ -101,8 +130,15 @@ void main() {
       final manque = f == Format.ogg && !encodeurs.contains('libvorbis');
       test('conversion vidéo → ${f.libelle}', skip: manque ? 'libvorbis absent du FFmpeg système' : false, () async {
         final sortie = p.join(dossier.path, 'conv.${f.extension}');
-        await lancer(commandeConversion(entree: video, sortie: sortie, format: f, qualite: Qualite.compacte,
-            definition: Definition.p480));
+        await lancer(
+          commandeConversion(
+            entree: video,
+            sortie: sortie,
+            format: f,
+            qualite: Qualite.compacte,
+            definition: Definition.p480,
+          ),
+        );
         final types = await typesDeFlux(sortie);
         expect(types.contains('video'), f.video);
         expect(types.contains('audio'), f != Format.gif);
@@ -138,8 +174,22 @@ void main() {
       expect(extractionTelleQuelle('pcm_s8').arguments, ['-c:a', 'pcm_s24le']);
       for (final codec in ['pcm_s16be', 'pcm_s24be', 'pcm_s16le']) {
         final mov = p.join(dossier.path, 'camera $codec.mov');
-        await lancer(['-f', 'lavfi', '-i', 'testsrc=duration=3:size=160x120', '-f', 'lavfi', '-i', 'sine=duration=3',
-          '-c:v', 'libx264', '-c:a', codec, '-shortest', mov]);
+        await lancer([
+          '-f',
+          'lavfi',
+          '-i',
+          'testsrc=duration=3:size=160x120',
+          '-f',
+          'lavfi',
+          '-i',
+          'sine=duration=3',
+          '-c:v',
+          'libx264',
+          '-c:a',
+          codec,
+          '-shortest',
+          mov,
+        ]);
         final sortie = p.join(dossier.path, 'camera $codec.${extensionPourCodecAudio(codec)}');
         await lancer(commandeExtraction(entree: mov, sortie: sortie, codecAudio: codec));
         expect(await typesDeFlux(sortie), ['audio']);
@@ -159,9 +209,25 @@ void main() {
       });
     }
 
+    // Fichier réel signalé sous Windows : un OGG d'enregistreur avec une 2e piste de type inconnu.
+    for (final precis in [false, true]) {
+      test('découpe d\'un OGG avec une piste inconnue (${precis ? 'précise' : 'rapide'})', () async {
+        const source = 'test/fichiers/flux-inconnu.ogg';
+        final plan = planDecoupe(dureeTotale: await duree(source), mode: ModeDecoupe.parties, parties: 2);
+        for (var i = 0; i < plan.length; i++) {
+          final sortie = p.join(dossier.path, 'ogg ${precis}_$i.ogg');
+          await lancer(commandeMorceau(entree: source, sortie: sortie, morceau: plan[i], precis: precis, video: false));
+          expect(await typesDeFlux(sortie), ['audio']);
+          expect(await duree(sortie), closeTo(2, 0.15));
+        }
+      }, skip: precis && !encodeurs.contains('libvorbis') ? 'libvorbis absent du FFmpeg système' : false);
+    }
+
     test('passage audio précis', () async {
       final sortie = p.join(dossier.path, 'passage.wav');
-      await lancer(commandeMorceau(entree: audio, sortie: sortie, morceau: const Morceau(2, 5.5), precis: true, video: false));
+      await lancer(
+        commandeMorceau(entree: audio, sortie: sortie, morceau: const Morceau(2, 5.5), precis: true, video: false),
+      );
       expect(await duree(sortie), closeTo(3.5, 0.05));
     });
   });

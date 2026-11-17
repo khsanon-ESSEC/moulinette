@@ -88,8 +88,18 @@ List<String> commandeConversion({
   bool sansReencodage = false,
 }) {
   return [
-    '-hide_banner', '-y', '-i', entree,
-    if (sansReencodage) ...['-map', '0:v?', '-map', '0:a?', '-c', 'copy'] else ...[
+    '-hide_banner',
+    '-y',
+    '-i',
+    entree,
+    if (sansReencodage) ...[
+      '-map',
+      '0:v?',
+      '-map',
+      '0:a?',
+      '-c',
+      'copy',
+    ] else ...[
       // Première piste vidéo et première piste audio, si elles existent.
       if (format.video && format != Format.gif) ...['-map', '0:v:0?', '-map', '0:a:0?'],
       if (!format.video) ...['-map', '0:a:0'],
@@ -110,7 +120,15 @@ List<String> commandeExtraction({
   String? codecAudio,
 }) {
   return [
-    '-hide_banner', '-y', '-i', entree, '-map', '0:a:0', '-vn', '-sn', '-dn',
+    '-hide_banner',
+    '-y',
+    '-i',
+    entree,
+    '-map',
+    '0:a:0',
+    '-vn',
+    '-sn',
+    '-dn',
     if (format == null) ...extractionTelleQuelle(codecAudio).arguments else ...argumentsEncodage(format, qualite),
     sortie,
   ];
@@ -128,14 +146,27 @@ List<String> commandeMorceau({
   final ext = p.extension(sortie);
   final format = Format.depuisExtension(ext) ?? (video ? Format.mp4 : Format.m4a);
   return [
-    '-hide_banner', '-y',
+    '-hide_banner',
+    '-y',
     if (morceau.debut > 0) ...['-ss', pourFfmpeg(morceau.debut)],
-    '-i', entree,
-    '-t', pourFfmpeg(morceau.duree),
+    '-i',
+    entree,
+    '-t',
+    pourFfmpeg(morceau.duree),
     if (precis) ...[
       if (video) ...['-map', '0:v:0?', '-map', '0:a:0?'] else ...['-map', '0:a:0'],
       ...argumentsEncodage(format, Qualite.haute),
-    ] else ...['-map', '0', '-c', 'copy', '-avoid_negative_ts', 'make_zero'],
+      // Toutes les pistes sont gardées, sauf celles de type inconnu (ex. piste annexe de certains enregistreurs
+      // OGG) : FFmpeg refuserait sinon d'écrire le fichier (« Cannot map stream … unsupported type »).
+    ] else ...[
+      '-map',
+      '0',
+      '-ignore_unknown',
+      '-c',
+      'copy',
+      '-avoid_negative_ts',
+      'make_zero',
+    ],
     sortie,
   ];
 }
