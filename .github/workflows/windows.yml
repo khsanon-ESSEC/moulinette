@@ -1,19 +1,40 @@
 # Construit Moulinette pour Windows (impossible depuis un Mac) et publie un .zip à télécharger.
 # Se lance à chaque étiquette v* (ex. v1.0.0) ou à la main depuis l'onglet Actions.
+#
+# Sécurité de la chaîne de construction :
+# - les actions sont épinglées par empreinte de commit (une étiquette « v2 » peut être déplacée) ;
+# - le FFmpeg pour Windows n'est plus téléchargé par le plugin sans contrôle : on le télécharge ici, on vérifie
+#   son empreinte SHA-256 (notée dans windows/ffmpegkit.sha256, identique à celle publiée par GitHub le
+#   2 octobre 2026), puis on le donne au plugin par FFMPEGKIT_LOCAL_DIR. Changer de version = changer l'URL
+#   et l'empreinte ensemble, après vérification.
 name: Windows
 on:
   workflow_dispatch:
   push:
     tags: ['v*']
+permissions:
+  contents: read
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      FFMPEGKIT_ZIP: ffmpeg-kit-windows-x86_64-full-gpl-8.1.2.zip
+      FFMPEGKIT_URL: https://github.com/sk3llo/ffmpeg_kit_flutter/releases/download/8.1.2-full-gpl/ffmpeg-kit-windows-x86_64-full-gpl-8.1.2.zip
     steps:
-      - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: 3.47.9
+      - name: FFmpeg pour Windows, empreinte vérifiée
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:FFMPEGKIT_URL -OutFile $env:FFMPEGKIT_ZIP
+          $attendu = (Get-Content windows/ffmpegkit.sha256).Split(' ')[0].Trim().ToLower()
+          $obtenu = (Get-FileHash -Algorithm SHA256 $env:FFMPEGKIT_ZIP).Hash.ToLower()
+          if ($obtenu -ne $attendu) { throw "Empreinte FFmpeg inattendue : $obtenu (attendu $attendu)" }
+          Expand-Archive $env:FFMPEGKIT_ZIP -DestinationPath "$env:RUNNER_TEMP/ffmpegkit"
+          echo "FFMPEGKIT_LOCAL_DIR=$env:RUNNER_TEMP/ffmpegkit" >> $env:GITHUB_ENV
       - run: flutter pub get
       - run: flutter test test/ecrans_test.dart
       # Fait tourner le FFmpeg intégré sous Windows : les 12 formats, la découpe, l'annulation.
@@ -25,7 +46,7 @@ jobs:
           $v = (Select-String -Path pubspec.yaml -Pattern '^version: (\S+)\+').Matches[0].Groups[1].Value
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "Moulinette-$v-windows.zip"
           echo "ZIP=Moulinette-$v-windows.zip" >> $env:GITHUB_ENV
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: Moulinette-windows
           path: ${{ env.ZIP }}
