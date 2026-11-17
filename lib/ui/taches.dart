@@ -22,10 +22,18 @@ class EcranTaches extends StatelessWidget {
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+            // Le bouton peut passer sur deux lignes quand le texte est agrandi (réglage d'accessibilité).
             child: Row(children: [
-              Expanded(child: compact ? Text('Tâches', style: theme.textTheme.titleMedium) : const SizedBox()),
+              if (compact) Text('Tâches', style: theme.textTheme.titleMedium),
+              const Spacer(),
               if (taches.any((t) => !t.active))
-                TextButton(onPressed: fileAttente.effacerTerminees, child: const Text('Effacer les terminées')),
+                Flexible(
+                  flex: 4,
+                  child: TextButton(
+                    onPressed: fileAttente.effacerTerminees,
+                    child: const Text('Effacer les terminées', textAlign: TextAlign.end),
+                  ),
+                ),
             ]),
           ),
           Expanded(
