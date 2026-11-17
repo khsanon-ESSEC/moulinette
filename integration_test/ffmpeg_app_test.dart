@@ -30,8 +30,17 @@ void main() {
   tearDownAll(() => dossier.delete(recursive: true));
 
   testWidgets('dossier de sortie par défaut', (_) async {
-    final d = await Reglages().dossierPour(video);
-    if (Platform.isAndroid) expect(d, '/storage/emulated/0/Download/Moulinette');
+    final reglages = Reglages();
+    final d = await reglages.dossierPour(video);
+    // T-007 : sur Android 10 et avant, sans l'autorisation « stockage », repli sur le dossier de l'app, annoncé.
+    // --dart-define=STOCKAGE=refuse quand le test tourne avec l'autorisation refusée.
+    if (Platform.isAndroid && const String.fromEnvironment('STOCKAGE') == 'refuse') {
+      expect(d, contains('/Android/data/ht.khsanon.moulinette/'));
+      expect(reglages.description, startsWith('Autorisation refusée'));
+    } else if (Platform.isAndroid) {
+      expect(d, '/storage/emulated/0/Download/Moulinette');
+      expect(reglages.description, 'Téléchargements › Moulinette');
+    }
     final f = File(p.join(d, 'essai-moulinette.txt'));
     await f.writeAsString('ok');
     await f.delete();
