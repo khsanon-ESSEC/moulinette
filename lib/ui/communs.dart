@@ -49,10 +49,10 @@ class ListeFichiers extends StatefulWidget {
 class _ListeFichiersState extends State<ListeFichiers> {
   bool _choix = false;
 
-  Future<void> _ajouter() async {
+  Future<void> _ajouter({bool depuisPhotos = false}) async {
     setState(() => _choix = true);
     try {
-      final nouvelles = await choisirFichiers(plusieurs: widget.plusieurs);
+      final nouvelles = await choisirFichiers(plusieurs: widget.plusieurs, depuisPhotos: depuisPhotos);
       if (nouvelles.isEmpty) return;
       if (!widget.plusieurs) widget.sources.clear();
       widget.sources.addAll(nouvelles);
@@ -109,6 +109,17 @@ class _ListeFichiersState extends State<ListeFichiers> {
               : (widget.plusieurs ? 'Ajouter des fichiers' : 'Choisir un autre fichier')),
           style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
         ),
+        // Sur iPad, le bouton ci-dessus ouvre l'app Fichiers ; les vidéos de la photothèque ont leur propre bouton.
+        if (aUnePhototheque)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: OutlinedButton.icon(
+              onPressed: _choix ? null : () => _ajouter(depuisPhotos: true),
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Depuis Photos'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            ),
+          ),
       ],
     );
   }

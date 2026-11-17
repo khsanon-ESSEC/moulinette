@@ -68,26 +68,24 @@ class Source {
 const _extensionsMedia = [
   'mp4', 'm4v', 'mov', 'mkv', 'webm', 'avi', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', 'mts', 'm2ts', '3gp', 'ogv',
   'gif', 'mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'oga', 'opus', 'wma', 'aiff', 'aif', 'amr', 'ac3', 'mka',
-  'caf', 'webm',
+  'caf',
 ];
 
-/// Ouvre le sélecteur de fichiers (audio et vidéo).
-Future<List<Source>> choisirFichiers({bool plusieurs = true}) async {
+/// La photothèque n'existe comme source à part que sur iPad et iPhone.
+bool get aUnePhototheque => Platform.isIOS;
+
+/// Ouvre le sélecteur de fichiers (audio et vidéo). Partout c'est le sélecteur de documents, filtré par extension
+/// (sur iPad : l'app Fichiers, Drive, clé USB…) ; avec [depuisPhotos], la photothèque de l'iPad (vidéos).
+Future<List<Source>> choisirFichiers({bool plusieurs = true, bool depuisPhotos = false}) async {
   final List<PlatformFile> fichiers;
   // Android : pas de copie dans le cache (les vidéos peuvent peser des gigaoctets).
   const android = FilePickerAndroidOptions(safOptions: AndroidSAFOptions(copyToCache: false));
+  final type = depuisPhotos ? FileType.video : FileType.custom;
+  final extensions = depuisPhotos ? null : _extensionsMedia;
   if (plusieurs) {
-    fichiers = await FilePicker.pickFiles(
-      type: Platform.isIOS ? FileType.media : FileType.custom,
-      allowedExtensions: Platform.isIOS ? null : _extensionsMedia,
-      androidOptions: android,
-    );
+    fichiers = await FilePicker.pickFiles(type: type, allowedExtensions: extensions, androidOptions: android);
   } else {
-    final f = await FilePicker.pickFile(
-      type: Platform.isIOS ? FileType.media : FileType.custom,
-      allowedExtensions: Platform.isIOS ? null : _extensionsMedia,
-      androidOptions: android,
-    );
+    final f = await FilePicker.pickFile(type: type, allowedExtensions: extensions, androidOptions: android);
     fichiers = f == null ? [] : [f];
   }
   return [
