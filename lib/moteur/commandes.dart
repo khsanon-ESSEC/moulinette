@@ -100,16 +100,18 @@ List<String> commandeConversion({
   ];
 }
 
-/// Commande d'extraction de la piste audio. Sans [format], la piste est recopiée telle quelle.
+/// Commande d'extraction de la piste audio. Sans [format], la piste est gardée telle quelle ([codecAudio] sert
+/// à savoir si le conteneur l'accepte, voir [extractionTelleQuelle]).
 List<String> commandeExtraction({
   required String entree,
   required String sortie,
   Format? format,
   Qualite qualite = Qualite.normale,
+  String? codecAudio,
 }) {
   return [
     '-hide_banner', '-y', '-i', entree, '-map', '0:a:0', '-vn', '-sn', '-dn',
-    if (format == null) ...['-c:a', 'copy'] else ...argumentsEncodage(format, qualite),
+    if (format == null) ...extractionTelleQuelle(codecAudio).arguments else ...argumentsEncodage(format, qualite),
     sortie,
   ];
 }

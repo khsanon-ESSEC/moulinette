@@ -38,7 +38,8 @@ class _EcranExtraireState extends State<EcranExtraire> {
             sortie: sortie,
             duree: s.duree ?? 0,
             commande: () async =>
-                commandeExtraction(entree: await s.entree(), sortie: sortie, format: format, qualite: qualite),
+                commandeExtraction(
+                entree: await s.entree(), sortie: sortie, format: format, qualite: qualite, codecAudio: s.codecAudio),
           ),
         ],
       ));

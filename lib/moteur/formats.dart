@@ -107,8 +107,23 @@ List<String> argumentsEncodage(Format f, Qualite q, {Definition definition = Def
 }
 
 /// Extension du fichier audio quand on extrait la piste telle quelle, selon son codec.
-String extensionPourCodecAudio(String? codec) {
+String extensionPourCodecAudio(String? codec) => extractionTelleQuelle(codec).extension;
+
+/// PCM que le format WAV accepte tel quel (petit-boutiste).
+const _pcmWav = {'pcm_u8', 'pcm_s16le', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'pcm_f64le', 'pcm_alaw', 'pcm_mulaw'};
+
+/// Extraction « telle quelle » : l'extension du fichier et les arguments audio. La piste est recopiée, sauf un PCM
+/// que le WAV refuse (le PCM « gros-boutiste » des .MOV de caméra) : il est réécrit en PCM standard, sans perte.
+({String extension, List<String> arguments}) extractionTelleQuelle(String? codec) {
   final c = (codec ?? '').toLowerCase();
+  if (c.startsWith('pcm_') && !_pcmWav.contains(c)) {
+    final petit = c.endsWith('be') ? '${c.substring(0, c.length - 2)}le' : '';
+    return (extension: 'wav', arguments: ['-c:a', _pcmWav.contains(petit) ? petit : 'pcm_s24le']);
+  }
+  return (extension: _extensionCopie(c), arguments: const ['-c:a', 'copy']);
+}
+
+String _extensionCopie(String c) {
   if (c == 'aac' || c == 'alac') return 'm4a';
   if (c == 'mp3') return 'mp3';
   if (c == 'opus') return 'opus';

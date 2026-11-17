@@ -213,6 +213,10 @@ String messageErreur(String journal) {
   if (j.contains('could not find tag for codec') || j.contains('codec not currently supported in container')) {
     return 'Ce format ne peut pas contenir les pistes d’origine sans réencodage. Décochez « Sans réencodage ».';
   }
+  if (j.contains('could not write header') || j.contains('error initializing output stream')) {
+    return 'Ce format de fichier ne peut pas recevoir cette piste telle quelle. Choisissez un format (MP3, WAV…) '
+        'au lieu de « Tel quel », ou désactivez « Sans réencodage ».';
+  }
   if (j.contains('no space left')) return 'L’appareil n’a plus assez de place.';
   if (j.contains('permission denied')) return 'Écriture refusée dans le dossier de destination.';
   if (j.contains('invalid data found')) return 'Le fichier est abîmé ou n’est pas un fichier audio ou vidéo.';

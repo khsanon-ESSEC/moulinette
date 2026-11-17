@@ -132,6 +132,21 @@ void main() {
       expect(await duree(mp3), closeTo(12, 0.2));
     });
 
+    test('T-004 : extraction telle quelle du PCM de caméra (gros-boutiste) vers WAV', () async {
+      expect(extractionTelleQuelle('pcm_s16le').arguments, ['-c:a', 'copy']);
+      expect(extractionTelleQuelle('pcm_s24be').arguments, ['-c:a', 'pcm_s24le']);
+      expect(extractionTelleQuelle('pcm_s8').arguments, ['-c:a', 'pcm_s24le']);
+      for (final codec in ['pcm_s16be', 'pcm_s24be', 'pcm_s16le']) {
+        final mov = p.join(dossier.path, 'camera $codec.mov');
+        await lancer(['-f', 'lavfi', '-i', 'testsrc=duration=3:size=160x120', '-f', 'lavfi', '-i', 'sine=duration=3',
+          '-c:v', 'libx264', '-c:a', codec, '-shortest', mov]);
+        final sortie = p.join(dossier.path, 'camera $codec.${extensionPourCodecAudio(codec)}');
+        await lancer(commandeExtraction(entree: mov, sortie: sortie, codecAudio: codec));
+        expect(await typesDeFlux(sortie), ['audio']);
+        expect(await duree(sortie), closeTo(3, 0.1));
+      }
+    });
+
     for (final precis in [false, true]) {
       test('découpe vidéo en 3 (${precis ? 'précise' : 'rapide'})', () async {
         final plan = planDecoupe(dureeTotale: await duree(video), mode: ModeDecoupe.parties, parties: 3);
