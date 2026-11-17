@@ -4,8 +4,8 @@
 # Sécurité de la chaîne de construction :
 # - les actions sont épinglées par empreinte de commit (une étiquette « v2 » peut être déplacée) ;
 # - le FFmpeg pour Windows n'est plus téléchargé par le plugin sans contrôle : on le télécharge ici, on vérifie
-#   son empreinte SHA-256 (notée dans windows/ffmpegkit.sha256, identique à celle publiée par GitHub le
-#   2 octobre 2026), puis on le donne au plugin par FFMPEGKIT_LOCAL_DIR. Changer de version = changer l'URL
+#   son empreinte SHA-256 (notée dans windows/ffmpegkit.sha256, identique à celle publiée par GitHub ; fichier
+#   reconstruit par le mainteneur le 17 novembre 2026, cf. sk3llo/ffmpeg_kit_flutter#175), puis on le donne au plugin par FFMPEGKIT_LOCAL_DIR. Changer de version = changer l'URL
 #   et l'empreinte ensemble, après vérification.
 name: Windows
 on:
