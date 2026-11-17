@@ -12,6 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 bool get surBureau => Platform.isMacOS || Platform.isWindows || Platform.isLinux;
@@ -107,9 +108,13 @@ class Reglages extends ChangeNotifier {
   /// Dossier choisi par l'utilisateur ; `null` = réglage par défaut de l'appareil.
   String? dossierChoisi;
 
+  /// Android 10 et avant, autorisation refusée : les fichiers vont dans le dossier propre à l'app.
+  String? _repliAndroid;
+
   String get description {
     if (dossierChoisi != null) return dossierChoisi!;
     if (surBureau) return 'Le dossier du fichier d’origine';
+    if (_repliAndroid != null) return 'Autorisation refusée : $_repliAndroid';
     if (Platform.isAndroid) return 'Téléchargements › Moulinette';
     return 'Fichiers › Sur mon iPad › Moulinette';
   }
@@ -145,13 +150,17 @@ class Reglages extends ChangeNotifier {
     Directory d;
     if (Platform.isAndroid) {
       d = Directory('/storage/emulated/0/Download/Moulinette');
-      try {
-        await d.create(recursive: true);
-        final essai = File(p.join(d.path, '.essai'));
-        await essai.writeAsString('ok');
-        await essai.delete();
-      } catch (_) {
+      // Android 11 et plus : écriture directe permise. Android 10 et avant : il faut l'autorisation « stockage ».
+      if (!await _inscriptible(d) &&
+          !(await Permission.storage.request().isGranted && await _inscriptible(d))) {
         d = Directory(p.join((await getExternalStorageDirectory())!.path, 'Moulinette'));
+        if (_repliAndroid != d.path) {
+          _repliAndroid = d.path;
+          notifyListeners();
+        }
+      } else if (_repliAndroid != null) {
+        _repliAndroid = null;
+        notifyListeners();
       }
     } else if (Platform.isIOS) {
       d = await getApplicationDocumentsDirectory();
@@ -160,6 +169,18 @@ class Reglages extends ChangeNotifier {
     }
     await d.create(recursive: true);
     return d.path;
+  }
+
+  static Future<bool> _inscriptible(Directory d) async {
+    try {
+      await d.create(recursive: true);
+      final essai = File(p.join(d.path, '.essai'));
+      await essai.writeAsString('ok');
+      await essai.delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
